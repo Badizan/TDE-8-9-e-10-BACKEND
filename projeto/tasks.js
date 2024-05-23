@@ -1,36 +1,66 @@
 const {prisma} = require("./prisma")
 
 
-const findtasks = async () => {
-    const tasks = await prisma.tasks.findMany();
+const findtasks = async (usuarioID) => {
+    const tasks = await prisma.tasks.findMany({
+        where: {
+            usuario: {
+                id: usuarioID
+            }
+        },
+        include: {
+            usuario: {
+                select: {
+                    id: true,
+                    email: true,
+                }
+            }
+        }
+    });
+
     return tasks
 }
 
-const adicionartasks = async (data) => {
-    const tasks = await prisma.tasks.create({
-        data: {  
-            name: data.name,
-            description: data.description,
-            isDone: data.isDone
+const findById = async (id, usuarioID) => {
+    const tasks = await prisma.tasks.findFirst({
+        where: {
+            id,
+            usuarioID
         }
     })
     return tasks
 }
 
-const atualizarTasks = async (id, data) => {
-    const tasks = await prisma.tasks.update({
-        data,
-        where: { 
-            id
+const adicionartasks = async (data, usuarioID) => {
+    const tasks = await prisma.tasks.create({
+        data: {  
+              ...data,
+        usuario: {
+            connect: {
+                id: usuarioID
+            }
         }
-      })
-      return tasks;
+    }
+})
+    return tasks
 }
 
-const deletarTasks = async (id) => {
-    const tasks = await prisma.tasks.delete({
+const atualizarTasks = async (id, data, usuarioID) => {
+      await prisma.tasks.updateMany({
+        data,
+        where: { 
+            id,
+            usuarioID
+        }
+      })
+      return await findById(id, usuarioID);
+}
+
+const deletarTasks = async (id, usuarioID) => {
+    const tasks = await prisma.tasks.deleteMany({
             where: {
-                id
+                id,
+                usuarioID
             }
         })
     }
@@ -41,5 +71,6 @@ module.exports = {
     findtasks,
     adicionartasks,
     atualizarTasks,
-    deletarTasks
+    deletarTasks,
+    findById
 }
